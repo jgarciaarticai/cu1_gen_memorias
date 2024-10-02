@@ -1,0 +1,8 @@
+Utiliza las siguientes piezas de contexto recuperado para responder a la pregunta formulada a continuación.
+
+CONTEXTO:
+<|begin_of_text|>
+{context}
+<|eot_id|>
+
+PREGUNTA: {question}

@@ -1,0 +1,17 @@
+{
+  "input_folder": "C:\\Users\\jgarcia\\source\\repos\\GEN_MEMORIAS\\data\\input_files",
+  "output_folder": "C:\\Users\\jgarcia\\source\\repos\\GEN_MEMORIAS\\data\\output_files",
+  "prompts_template": "C:\\Users\\jgarcia\\source\\repos\\GEN_MEMORIAS\\config\\plantillas_prompts\\CU_1_PROMPT_PERTES_PARTE_1.xlsx",
+  "format_template": "C:\\Users\\jgarcia\\source\\repos\\GEN_MEMORIAS\\config\\plantillas_memorias\\CU_1_FORMAT_PERTES.docx",
+  "context_template": "C:\\Users\\jgarcia\\source\\repos\\GEN_MEMORIAS\\config\\context_template.txt",
+  "system_prompt": "C:\\Users\\jgarcia\\source\\repos\\GEN_MEMORIAS\\config\\system_prompt.txt",
+  "resolucion_ocr": "600",
+  "default_model": "mannix/llama3.1-8b-abliterated",
+  "embedding_model": "mxbai-embed-large",
+  "chunk_size": "1200",
+  "chunk_overlap": "400",
+  "temperature": "0",
+  "top_p": "0.9",
+  "k": "6",
+  "score_threshold": "0.4"
+}
