@@ -49,7 +49,7 @@ try:
 
     # Inicializar la base de datos vectorial
     embeddings_model = config["embedding_model"]
-    local_embeddings = OllamaEmbeddings(model=embeddings_model, base_url="http://localhost:11434")
+    local_embeddings = OllamaEmbeddings(model=embeddings_model, base_url="http://host.docker.internal:11434")
     logger.info(f"Modelo embeddings: {embeddings_model}")
     
     index = faiss.IndexFlatL2(len(local_embeddings.embed_query("hola mundo")))
@@ -88,7 +88,7 @@ try:
 
     # Indicamos el modelo
     model = Ollama(
-        base_url="http://localhost:11434",
+        base_url="http://host.docker.internal:11434",
         system=config["system_prompt"],
         model=config["default_model"], 
         callback_manager=CallbackManager([StreamingStdOutCallbackHandler()]),
