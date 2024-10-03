@@ -1,14 +1,12 @@
-version: '3.8'
-
 services:
   app:
     build:
       context: .
       dockerfile: Dockerfile
     volumes:
-      - ./config:/app/config  # Mapea la carpeta de config
-      - ./data:/app/data  # Mapea la carpeta de data
-      - ./logs:/app/logs  # Mapea la carpeta de logs
+      - Z:/config:/app/config  # Mapea la carpeta de config
+      - Z:/data:/app/data  # Mapea la carpeta de data
+      - Z:/logs:/app/logs  # Mapea la carpeta de logs
     ports:
       - "5000:5000"
     depends_on:
@@ -19,7 +17,7 @@ services:
     ports:
       - "11434:11434"
     volumes:
-      - ./ollama_models:/root/.ollama  # Mapea los modelos a un volumen persistente
+      - Z:/ollama_models:/root/.ollama  # Mapea los modelos a un volumen persistente
     networks:
       - app-network
 

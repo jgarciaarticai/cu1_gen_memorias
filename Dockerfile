@@ -13,4 +13,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Comando por defecto para ejecutar tu aplicación (modifica según sea necesario)
-CMD ["python", "app.py"]
+CMD ["python", "src/CU1_GEN_MEMORIAS.py"]
