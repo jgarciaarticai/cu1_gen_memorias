@@ -178,3 +178,6 @@ try:
 except Exception as e:
     logger.critical(f"Error crítico durante la ejecución del script: {str(e)}", exc_info=True)
     print(f"Ha ocurrido un error crítico. Revisa el log para más detalles: {log_file_path}")
+
+
+# añado lina prueba
