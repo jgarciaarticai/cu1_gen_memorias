@@ -180,4 +180,3 @@ except Exception as e:
     print(f"Ha ocurrido un error crítico. Revisa el log para más detalles: {log_file_path}")
 
 
-# añado lina prueba
