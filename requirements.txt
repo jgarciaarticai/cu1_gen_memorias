@@ -17,3 +17,4 @@ pytesseract
 pdf2image
 pdfplumber
 ragatouille
+python-decouple

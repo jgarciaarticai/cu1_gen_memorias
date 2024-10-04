@@ -3,21 +3,19 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    volumes:
-      - Z:/config:/app/config  # Mapea la carpeta de config
-      - Z:/data:/app/data  # Mapea la carpeta de data
-      - Z:/logs:/app/logs  # Mapea la carpeta de logs
     ports:
       - "5000:5000"
     depends_on:
       - ollama  # Asegura que Ollama esté iniciado antes que la app
+    volumes:
+      - Z:/data:/app/data
+      - Z:/config:/app/config
+      - Z:/logs:/app/logs
 
   ollama:
     image: ollama/ollama:latest  # Usa la imagen de Ollama que ya tienes
     ports:
       - "11434:11434"
-    volumes:
-      - Z:/ollama_models:/root/.ollama  # Mapea los modelos a un volumen persistente
     networks:
       - app-network
 

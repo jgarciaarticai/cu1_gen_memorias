@@ -4,6 +4,7 @@ import json
 import logging
 from datetime import datetime
 from docx import Document
+from decouple import config
 
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
@@ -33,22 +34,18 @@ logger = logging.getLogger(__name__)
 
 
 try:
-    # Cargar configuración general desde config.json
-    config_path = os.path.join(BASE_DIR, 'config', 'config.json')
-    with open(config_path, 'r', encoding='utf-8') as config_file:
-        config = json.load(config_file)
-    logger.info("Configuración cargada correctamente.")
 
     # Leer rutas a plantillas
-    carpeta_entrada = config["input_folder"]
-    carpeta_salida = config["output_folder"]
-    plantilla_excel = config["prompts_template"]
-    plantilla_word = config["format_template"]
-    plantilla_contexto = config["context_template"]
+    carpeta_entrada = config("INPUT_FOLDER")
+    carpeta_salida = config("OUTPUT_FOLDER")
+    plantilla_excel = config("PROMPTS_TEMPLATE")
+    plantilla_word = config("FORMAT_TEMPLATE")
+    plantilla_contexto = config("CONTEXT_TEMPLATE")
 
+    logger.info("Configuración y rutas cargadas correctamente.")
 
     # Inicializar la base de datos vectorial
-    embeddings_model = config["embedding_model"]
+    embeddings_model = config("EMBEDDING_MODEL")
     local_embeddings = OllamaEmbeddings(model=embeddings_model, base_url="http://host.docker.internal:11434")
     logger.info(f"Modelo embeddings: {embeddings_model}")
     
@@ -66,11 +63,11 @@ try:
         filepath = os.path.join(carpeta_entrada, filename)
         if filename.endswith(".pdf"):
             logger.info(f"Procesando archivo: {filepath}")
-            data = pdf_a_texto.procesar_pdf(filepath, config["resolucion_ocr"]) # OCR si es necesario
+            data = pdf_a_texto.procesar_pdf(filepath, config("RESOLUCION_OCR")) # OCR si es necesario
             logger.info("Archivo PDF cargado correctamente.")
 
             # Dividir el archivo en chunks
-            text_splitter = RecursiveCharacterTextSplitter(config["chunk_size"], config["chunk_overlap"])
+            text_splitter = RecursiveCharacterTextSplitter(config("CHUNK_SIZE"), config("CHUNK_OVERLAP"))
             all_splits = text_splitter.split_text(data)
             logger.info(f"Documento {filename} dividido en chunks correctamente.")
 
@@ -82,20 +79,20 @@ try:
     
     retriever = vectorstore.as_retriever(
 #        search_type="similarity_score_threshold", 
-#        search_kwargs={"k": int(config["k"]), "score_threshold": float(config["score_threshold"])}
+#        search_kwargs={"k": int(os.getenv["K"]), "score_threshold": float(os.getenv["SCORE_THRESHOLD"])}
         search_type="mmr"
     )
 
     # Indicamos el modelo
     model = Ollama(
         base_url="http://host.docker.internal:11434",
-        system=config["system_prompt"],
-        model=config["default_model"], 
+        system=config("SYSTEM_PROMPT"),
+        model=config("DEFAULT_MODEL"), 
         callback_manager=CallbackManager([StreamingStdOutCallbackHandler()]),
-        temperature=config["temperature"],
-        top_p=config["top_p"],
+        temperature=config("TEMPERATURE"),
+        top_p=config("TOP_P"),
     )
-    logger.info(f"Modelo de LLM: {config['default_model']} con temperature: {config['temperature']} y top_p: {config['top_p']}")
+    logger.info(f"Modelo de LLM: {config('DEFAULT_MODEL')} con temperature: {config('TEMPERATURE')} y top_p: {config('TOP_P')}")
 
     # RAG
     # Añadimos comprension contextual
