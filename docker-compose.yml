@@ -8,9 +8,7 @@ services:
     depends_on:
       - ollama  # Asegura que Ollama esté iniciado antes que la app
     volumes:
-      - Z:/data:/app/data
-      - Z:/config:/app/config
-      - Z:/logs:/app/logs
+      - volumen_memorias:/app
 
   ollama:
     image: ollama/ollama:latest  # Usa la imagen de Ollama que ya tienes
@@ -22,3 +20,7 @@ services:
 networks:
   app-network:
     driver: bridge
+
+volumes:
+  volumen_memorias:
+    driver: local
