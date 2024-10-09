@@ -6,21 +6,21 @@ services:
     ports:
       - "5000:5000"
     depends_on:
-      - ollama  # Asegura que Ollama esté iniciado antes que la app
+      - ollama
     volumes:
       - ./src:/app/src
       - C:/Users/jgarcia/OneDrive - ARTICA INGENIERÍA E INNOVACIÓN/Documentos/4. Generacion memorias/config:/app/config
       - C:/Users/jgarcia/OneDrive - ARTICA INGENIERÍA E INNOVACIÓN/Documentos/4. Generacion memorias/data:/app/data
       - C:/Users/jgarcia/OneDrive - ARTICA INGENIERÍA E INNOVACIÓN/Documentos/4. Generacion memorias/logs:/app/logs
   ollama:
-    image: ollama/ollama:latest  # Usa la imagen de Ollama que ya tienes
+    image: ollama/ollama:latest
     deploy:
       resources:
         reservations:
           devices:
           - driver: nvidia
             capabilities: ["gpu"]
-            count: all  # Adjust count for the number of GPUs you want to use
+            count: all
     volumes:
       - ollama:/root/.ollama
     restart: always

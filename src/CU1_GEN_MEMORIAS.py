@@ -56,6 +56,7 @@ try:
         index=index,
         docstore=InMemoryDocstore(),
         index_to_docstore_id={},
+        normalize_L2=True
     )
     
     # Procesar cada documento en la carpeta de entrada
@@ -72,15 +73,14 @@ try:
             logger.info(f"Documento {filename} dividido en chunks correctamente.")
 
             # Añadir los chunks al índice FAISS
-            vectorstore.add_texts(texts=all_splits, embedding=local_embeddings, normalize_L2=True)
+            vectorstore.add_texts(texts=all_splits, embedding=local_embeddings)
             logger.info(f"Fragmentos de {filename} añadidos a la base de datos vectorial.")
 
     logger.info("Base de datos vectorial completada correctamente.")
     
     retriever = vectorstore.as_retriever(
-#        search_type="similarity_score_threshold", 
-#        search_kwargs={"k": int(os.getenv["K"]), "score_threshold": float(os.getenv["SCORE_THRESHOLD"])}
-        search_type="mmr"
+        search_type="similarity_score_threshold", 
+        search_kwargs={"k": int(config("K")), "score_threshold": float(config("SCORE_THRESHOLD"))}
     )
 
     # Indicamos el modelo
