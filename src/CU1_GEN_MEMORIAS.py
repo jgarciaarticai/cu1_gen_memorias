@@ -79,8 +79,8 @@ try:
     logger.info("Base de datos vectorial completada correctamente.")
     
     retriever = vectorstore.as_retriever(
-        search_type="similarity_score_threshold", 
-        search_kwargs={"k": int(config("K")), "score_threshold": float(config("SCORE_THRESHOLD"))}
+        search_type="mmr",
+        search_kwargs={"k": int(config("K"))}
     )
 
     # Indicamos el modelo

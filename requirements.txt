@@ -6,6 +6,7 @@ langchain-core
 langchain-ollama
 langsmith
 numpy
+simsimd
 openpyxl
 pandas
 pypdf
@@ -16,5 +17,4 @@ torch
 pytesseract
 pdf2image
 pdfplumber
-ragatouille
 python-decouple
