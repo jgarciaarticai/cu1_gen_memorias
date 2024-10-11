@@ -45,9 +45,10 @@ La configuración de la aplicación se maneja a través de variables de entorno 
 ## Ejecución
 
 1. Coloca los archivos PDF que deseas procesar en la carpeta especificada en la variable de entorno `INPUT_FOLDER`.
-2. Define los prompts y marcadores en la plantilla Excel especificada por `PROMPTS_TEMPLATE`.
-3. Al ejecutar el script, la aplicación generará automáticamente un documento Word con las respuestas insertadas en los marcadores correspondientes.
-4. Los documentos generados se guardarán en la carpeta especificada por `OUTPUT_FOLDER`.
+2. Define los prompts y marcadores en la plantilla Excel especificada por `CU_X_PROMPTS_TEMPLATE.xlsx`.
+3. Define los marcadores en la plantilla Word de salida especificada por `CU_X_FORMAT_TEMPLATE.docx`.
+4. Al ejecutar el script, la aplicación generará automáticamente un documento Word con las respuestas insertadas en los marcadores correspondientes.
+5. Los documentos generados se guardarán en la carpeta especificada por `OUTPUT_FOLDER`.
 
 ## Licencia
 Esta aplicación está bajo la licencia MIT.
