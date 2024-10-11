@@ -49,13 +49,5 @@ La configuración de la aplicación se maneja a través de variables de entorno 
 3. Al ejecutar el script, la aplicación generará automáticamente un documento Word con las respuestas insertadas en los marcadores correspondientes.
 4. Los documentos generados se guardarán en la carpeta especificada por `OUTPUT_FOLDER`.
 
-## Ejemplo de Uso
-
-```bash
-python CU1_GEN_MEMORIAS.py
-````
-
-Esto ejecutará el proceso de extracción de texto, consulta al LLM y generación del documento final en base a las plantillas proporcionadas.
-
-Licencia
+## Licencia
 Esta aplicación está bajo la licencia MIT.
