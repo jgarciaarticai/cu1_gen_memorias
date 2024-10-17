@@ -7,19 +7,20 @@ from docx import Document
 from decouple import config
 
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_community.vectorstores import FAISS
-from langchain_community.embeddings import OllamaEmbeddings
+from langchain_ollama import OllamaLLM
+from langchain_ollama import OllamaEmbeddings
+from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.prompts import PromptTemplate
-from langchain_community.llms import Ollama
 from langchain.callbacks.manager import CallbackManager
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from langchain_core.runnables import RunnablePassthrough
 from langchain_core.output_parsers import StrOutputParser
 
-from langchain.retrievers import ContextualCompressionRetriever
-from langchain.retrievers.document_compressors import LLMChainExtractor
 import faiss
+from langchain_community.vectorstores import FAISS
 from langchain_community.docstore.in_memory import InMemoryDocstore
+from langchain_community.document_transformers import LongContextReorder
+from langchain.retrievers.multi_query import MultiQueryRetriever
 
 import pdf_a_texto
 from logging_config import setup_logging
@@ -40,7 +41,9 @@ try:
     carpeta_salida = config("OUTPUT_FOLDER")
     plantilla_excel = config("PROMPTS_TEMPLATE")
     plantilla_word = config("FORMAT_TEMPLATE")
+    prompt_sistema = config("SYSTEM_PROMPT")
     plantilla_contexto = config("CONTEXT_TEMPLATE")
+    plantilla_multi = config("MULTIQUERY_TEMPLATE")
 
     logger.info("Configuración y rutas cargadas correctamente.")
 
@@ -49,8 +52,8 @@ try:
     local_embeddings = OllamaEmbeddings(model=embeddings_model, base_url="http://host.docker.internal:11434")
     logger.info(f"Modelo embeddings: {embeddings_model}")
     
+        
     index = faiss.IndexFlatL2(len(local_embeddings.embed_query("hola mundo")))
-    
     vectorstore = FAISS(
         embedding_function=local_embeddings,
         index=index,
@@ -58,7 +61,23 @@ try:
         index_to_docstore_id={},
         normalize_L2=True
     )
+
+    # Indicamos el modelo LLM
+
+    with open(prompt_sistema, 'r', encoding='utf-8') as system_p:
+        SYSTEM_TEMPLATE = system_p.read()
     
+    model = OllamaLLM(
+        base_url="http://host.docker.internal:11434",
+        system=SYSTEM_TEMPLATE,
+        model=config("DEFAULT_MODEL"), 
+        callback_manager=CallbackManager([StreamingStdOutCallbackHandler()]),
+        temperature=config("TEMPERATURE"),
+        top_p=config("TOP_P"),
+    )
+    logger.info(f"Modelo de LLM: {config('DEFAULT_MODEL')} con temperature: {config('TEMPERATURE')} y top_p: {config('TOP_P')}")
+
+
     # Procesar cada documento en la carpeta de entrada
     for filename in os.listdir(carpeta_entrada):
         filepath = os.path.join(carpeta_entrada, filename)
@@ -77,38 +96,41 @@ try:
             logger.info(f"Fragmentos de {filename} añadidos a la base de datos vectorial.")
 
     logger.info("Base de datos vectorial completada correctamente.")
-    
-    retriever = vectorstore.as_retriever(
-        search_type="mmr",
-        search_kwargs={"k": int(config("K"))}
-    )
-
-    # Indicamos el modelo
-    model = Ollama(
-        base_url="http://host.docker.internal:11434",
-        system=config("SYSTEM_PROMPT"),
-        model=config("DEFAULT_MODEL"), 
-        callback_manager=CallbackManager([StreamingStdOutCallbackHandler()]),
-        temperature=config("TEMPERATURE"),
-        top_p=config("TOP_P"),
-    )
-    logger.info(f"Modelo de LLM: {config('DEFAULT_MODEL')} con temperature: {config('TEMPERATURE')} y top_p: {config('TOP_P')}")
 
     # RAG
-    # Añadimos comprension contextual
-    #compressor = LLMChainExtractor.from_llm(model)
-    #compression_retriever = ContextualCompressionRetriever(base_compressor=compressor, base_retriever=retriever)
-    
-    def format_docs(docs):
-        return "\n\n".join(doc.page_content for doc in docs)
-    
+    with open(plantilla_multi, 'r', encoding='utf-8') as multi:
+        MULTI_TEMPLATE = multi.read()
+
+    multi_prompt = PromptTemplate(input_variables=["question"], template=MULTI_TEMPLATE)
+    logger.info("Leida la plantilla para hacer multiquery de la pregunta del usuario.")
+
     with open(plantilla_contexto, 'r', encoding='utf-8') as contexto:
         RAG_TEMPLATE = contexto.read()
    
-    rag_prompt = PromptTemplate.from_template(RAG_TEMPLATE)
+    rag_prompt = ChatPromptTemplate.from_template(RAG_TEMPLATE)
+    logger.info("Leida la plantilla para RAG.")    
     
+    # Definimos el retriever
+
+    #retriever = vectorstore.as_retriever(
+    #    search_type="mmr",
+    #    search_kwargs={"k": int(config("K"))}
+    #)
+
+    retriever = MultiQueryRetriever.from_llm(
+        retriever=vectorstore.as_retriever(), 
+        llm=model,
+        prompt=multi_prompt,
+    )
+
+    def format_docs(docs):
+        return "\n\n".join(doc.page_content for doc in docs)
+
     qa_chain = (
-        RunnablePassthrough.assign(context=lambda input: format_docs(input["context"]))
+        {
+            "question": lambda x: x["question"],  # input query
+            "context": lambda x: format_docs(x["context"]),  # context
+        }
         | rag_prompt
         | model
         | StrOutputParser()
@@ -136,11 +158,13 @@ try:
 
         try:
             # Buscamos trozos relevantes en el contexto
-            #docs = compression_retriever.invoke(question)
             docs = retriever.invoke(question)
-            logger.info(f"RETRIEVED DOCS: {docs}")
-            
-            respuesta = qa_chain.invoke({"context": docs, "question": question})
+            # Funcion para reordenar los trozos relevantes del contexto
+            reordering = LongContextReorder()
+            reordered_docs = reordering.transform_documents(docs)
+            logger.info(f"RETRIEVED DOCS: {reordered_docs}")
+
+            respuesta = qa_chain.invoke({"context": reordered_docs, "question": question})
             logger.info(f"RESPUESTA: {respuesta}")
         except Exception as e:
             logger.error(f"Error al procesar la consulta: {str(e)}")

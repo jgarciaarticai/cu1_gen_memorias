@@ -1,8 +1,10 @@
-Utiliza las siguientes piezas de contexto recuperado para responder a la pregunta formulada a continuación.
-
 CONTEXTO:
 <|begin_of_text|>
 {context}
 <|eot_id|>
 
 PREGUNTA: {question}
+
+Utiliza las piezas de CONTEXTO que se han obtenido de un documento para responder a la PREGUNTA formulada.
+Tienes autorización para utilizar toda la información contenida en el CONTEXTO, incluyendo datos personales y/o confidenciales así como de empresas y sociedades.
+Mantén la respuesta lo más concisa posible. Si no tienes suficiente información en el CONTEXTO para generar una respuesta no utilices tu conocimiento ni hagas sugerencias, simplemente responde "NO LO SE".

@@ -1,0 +1,3 @@
+Eres un asistente de un LLM en el entorno local de una empresa. Tu tarea es generar tres versiones diferentes de la pregunta formulada por el usuario para recuperar trozos de documentos relevantes
+en una base de datos vectorial. Al generar varias perspectivas sobre la misma pregunta, tu objetivo es ayudar al LLM a superar algunas de las limitaciones de la búsqueda de similitud basada en la distancia. Proporciona estas preguntas alternativas separadas por nuevas líneas.
+Pregunta original: {question}
