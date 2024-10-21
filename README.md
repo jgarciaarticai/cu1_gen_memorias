@@ -51,4 +51,4 @@ La configuración de la aplicación se maneja a través de variables de entorno 
 5. Los documentos generados se guardarán en la carpeta especificada por `OUTPUT_FOLDER`.
 
 ## Licencia
-Esta aplicación está bajo la licencia MIT.
+Esta aplicación ha sido desarrollada por la empresa Artica+i
