@@ -5,6 +5,7 @@ import logging
 from datetime import datetime
 from docx import Document
 from decouple import config
+from typing import List
 
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_ollama import OllamaLLM
@@ -13,8 +14,8 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.prompts import PromptTemplate
 from langchain.callbacks.manager import CallbackManager
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
-from langchain_core.runnables import RunnablePassthrough
 from langchain_core.output_parsers import StrOutputParser
+from langchain_core.output_parsers import BaseOutputParser
 
 import faiss
 from langchain_community.vectorstores import FAISS
@@ -63,7 +64,6 @@ try:
     )
 
     # Indicamos el modelo LLM
-
     with open(prompt_sistema, 'r', encoding='utf-8') as system_p:
         SYSTEM_TEMPLATE = system_p.read()
     
@@ -97,11 +97,11 @@ try:
 
     logger.info("Base de datos vectorial completada correctamente.")
 
-    # RAG
+    # Leer plantillas RAG
     with open(plantilla_multi, 'r', encoding='utf-8') as multi:
         MULTI_TEMPLATE = multi.read()
 
-    multi_prompt = PromptTemplate(input_variables=["question"], template=MULTI_TEMPLATE)
+    multi_prompt = PromptTemplate.from_template(MULTI_TEMPLATE)
     logger.info("Leida la plantilla para hacer multiquery de la pregunta del usuario.")
 
     with open(plantilla_contexto, 'r', encoding='utf-8') as contexto:
@@ -110,22 +110,31 @@ try:
     rag_prompt = ChatPromptTemplate.from_template(RAG_TEMPLATE)
     logger.info("Leida la plantilla para RAG.")    
     
-    # Definimos el retriever
 
-    #retriever = vectorstore.as_retriever(
-    #    search_type="mmr",
-    #    search_kwargs={"k": int(config("K"))}
-    #)
+    # Funcion para splitear la salida por lineas
+    class LineListOutputParser(BaseOutputParser[List[str]]):
+        """Output parser for a list of lines."""
 
-    retriever = MultiQueryRetriever.from_llm(
-        retriever=vectorstore.as_retriever(), 
-        llm=model,
-        prompt=multi_prompt,
-    )
+        def parse(self, text: str) -> List[str]:
+            lines = text.strip().split("\n")
+            return list(filter(None, lines))  # Remove empty lines
+
+    output_parser = LineListOutputParser()
 
     def format_docs(docs):
         return "\n\n".join(doc.page_content for doc in docs)
 
+    # Chain para hacer multiquery
+    multi_chain = ( 
+        {
+            "question": lambda x: x["question"]
+        }
+        | multi_prompt
+        | model
+        | output_parser
+    )
+
+    # Chain para hacer RAG
     qa_chain = (
         {
             "question": lambda x: x["question"],  # input query
@@ -137,6 +146,16 @@ try:
     )
     logger.info("Chain de RAG creada correctamente.")
 
+    # Definimos el retriever
+    retriever = MultiQueryRetriever.from_llm(
+        retriever=vectorstore.as_retriever(
+            search_type="mmr",
+            search_kwargs={"k": int(config("K"))}
+        ),
+        llm=model,
+        parser_key="lines"
+    )
+
     # LEER PROMPTS Y CARGAR PLANTILLAS
     queries_df = pd.read_excel(plantilla_excel)
     logger.info(f"La plantilla con los prompts es: {plantilla_excel}")
@@ -146,6 +165,7 @@ try:
     logger.info("Plantilla Word cargada correctamente.")
     output_file_path_docx = os.path.join(carpeta_salida, f"CU1_MEMORIA_{datetime.now().strftime('%Y%m%d_%H%M%S')}.docx")
 
+    
     # EJECUCION
     for _, row in queries_df.iterrows():
         question = row['PROMPT']
@@ -157,13 +177,15 @@ try:
             continue
 
         try:
-            # Buscamos trozos relevantes en el contexto
-            docs = retriever.invoke(question)
+            # Buscamos trozos relevantes en el contexto utilizando multiquery
+            multiquery = multi_chain.invoke({"question": question})
+            logger.info(f"MULTIQUERY: {multiquery}")
+            docs = retriever.invoke(multiquery)
             # Funcion para reordenar los trozos relevantes del contexto
             reordering = LongContextReorder()
             reordered_docs = reordering.transform_documents(docs)
             logger.info(f"RETRIEVED DOCS: {reordered_docs}")
-
+            # Respuesta a la pregunta original
             respuesta = qa_chain.invoke({"context": reordered_docs, "question": question})
             logger.info(f"RESPUESTA: {respuesta}")
         except Exception as e:
